@@ -12,8 +12,7 @@ jobs:
 - job: build_windows_x64_agent
 ################################################################################
   displayName: Windows Agent (x64)
-  pool:
-    vmImage: vs2017-win2016
+  pool: Default
   steps:
 
   # Steps template for windows platform
