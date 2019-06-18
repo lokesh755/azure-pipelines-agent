@@ -10,6 +10,7 @@ using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using Moq;
 using Xunit;
+using Test.L0.Util;
 
 namespace Test.L0.Plugin.TestResultParser
 {
@@ -215,6 +216,8 @@ namespace Test.L0.Plugin.TestResultParser
             var telemetry = new Mock<ITelemetryDataCollector>();
 
             telemetry.Setup(x => x.PublishCumulativeTelemetryAsync()).Returns(Task.FromResult(TaskResult.Succeeded));
+            telemetry.Setup(x => x.PublishTelemetryAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, Object>>())).Callback<string, Dictionary<string, Object>>((feature, props) => TelemetryPropsUtil.AssertPipelineData(props)).Returns(Task.FromResult(TaskResult.Succeeded));
+
 
             agentContext.Setup(x => x.Steps).Returns(new List<TaskStepDefinitionReference>()
             {
@@ -224,14 +227,20 @@ namespace Test.L0.Plugin.TestResultParser
                 }
             });
 
-            agentContext.Setup(x => x.VssConnection).Returns(vssConnection.Object);
-            agentContext.Setup(x => x.Variables).Returns(new Dictionary<string, VariableValue>()
+            Dictionary<string, VariableValue> agentContextVariables = new Dictionary<string, VariableValue>()
             {
-                {"system.hosttype", new VariableValue("build") },
-                {"system.servertype", new VariableValue("Hosted") },
-                {"build.buildId", new VariableValue("1") },
-                {"build.repository.provider", new VariableValue("Github") }
-            });
+                { "system.hosttype", new VariableValue("build") },
+                { "system.servertype", new VariableValue("Hosted") },
+                { "build.repository.provider", new VariableValue("GitHub") },
+                { "build.buildId", new VariableValue("1") },
+                { "agent.tempdirectory", new VariableValue("/tmp")},
+                { "agent.testfilepublisher.pattern", new VariableValue("test-*.xml")},
+                { "agent.testfilepublisher.searchfolders", new VariableValue("agent.tempdirectory")}
+            };
+            TelemetryPropsUtil.AddPipelineDataIntoAgentContext(agentContextVariables);
+            agentContext.Setup(x => x.VssConnection).Returns(vssConnection.Object);
+            agentContext.Setup(x => x.Variables).Returns(agentContextVariables);
+
             logParser.Setup(x => x.InitializeAsync(It.IsAny<IClientFactory>(), It.IsAny<IPipelineConfig>(), It.IsAny<ITraceLogger>(), It.IsAny<ITelemetryDataCollector>()))
                 .Returns(Task.CompletedTask);
 

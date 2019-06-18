@@ -151,19 +151,64 @@ namespace Agent.Plugins.Log.TestResultParser.Plugin
                 props.Add("BuildId", buildId);
             }
 
+            if (context.Variables.TryGetValue("system.stageName", out var stageName))
+            {
+                _pipelineConfig.StageName = stageName.Value;
+                _telemetry.AddOrUpdate("StageName", stageName.Value);
+                props.Add("StageName", stageName.Value);
+            }
+
+            if (context.Variables.TryGetValue("system.stageAttempt", out var stageAttemptVar) && int.TryParse(stageAttemptVar.Value, out var stageAttempt))
+            {
+                _pipelineConfig.StageAttempt = stageAttempt;
+                _telemetry.AddOrUpdate("StageAttempt", stageAttempt);
+                props.Add("StageAttempt", stageAttempt);
+            }
+
+            if (context.Variables.TryGetValue("system.phaseName", out var phaseName))
+            {
+                _pipelineConfig.PhaseName = phaseName.Value;
+                _telemetry.AddOrUpdate("PhaseName", phaseName.Value);
+                props.Add("PhaseName", phaseName.Value);
+            }
+
+            if (context.Variables.TryGetValue("system.phaseAttempt", out var phaseAttemptVar) && int.TryParse(phaseAttemptVar.Value, out var phaseAttempt))
+            {
+                _pipelineConfig.PhaseAttempt = phaseAttempt;
+                _telemetry.AddOrUpdate("PhaseAttempt", phaseAttempt);
+                props.Add("PhaseAttempt", phaseAttempt);
+            }
+
+            if (context.Variables.TryGetValue("system.jobName", out var jobName))
+            {
+                _pipelineConfig.JobName = jobName.Value;
+                _telemetry.AddOrUpdate("JobName", jobName.Value);
+                props.Add("JobName", jobName.Value);
+            }
+
+            if (context.Variables.TryGetValue("system.jobAttempt", out var jobAttemptVar) && int.TryParse(jobAttemptVar.Value, out var jobAttempt))
+            {
+                _pipelineConfig.JobAttempt = jobAttempt;
+                _telemetry.AddOrUpdate("JobAttempt", jobAttempt);
+                props.Add("JobAttempt", jobAttempt);
+            }
+
             if (context.Variables.TryGetValue("system.definitionid", out var buildDefinitionId))
             {
                 _telemetry.AddOrUpdate("BuildDefinitionId", buildDefinitionId.Value);
+                props.Add("BuildDefinitionId", buildDefinitionId.Value);
             }
 
             if (context.Variables.TryGetValue("build.Repository.name", out var repositoryName))
             {
                 _telemetry.AddOrUpdate("RepositoryName", repositoryName.Value);
+                props.Add("RepositoryName", repositoryName.Value);
             }
 
             if (context.Variables.TryGetValue("agent.version", out var agentVersion))
             {
                 _telemetry.AddOrUpdate("AgentVersion", agentVersion.Value);
+                props.Add("AgentVersion", agentVersion.Value);
             }
 
             // Publish the initial telemetry event in case we are not able to fire the cumulative one for whatever reason

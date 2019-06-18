@@ -16,6 +16,22 @@ namespace Test.L0.Plugin.TestResultParser
 {
     public class PipelineTestRunPublisherL0
     {
+        private PipelineConfig _pipelineConfig;
+        public PipelineTestRunPublisherL0 ()
+        {
+            this._pipelineConfig = new PipelineConfig()
+            {
+                BuildId = 1,
+                Project = new Guid(),
+                StageName = "Stage1",
+                StageAttempt = 1,
+                PhaseName = "Phase1",
+                PhaseAttempt = 1,
+                JobName = "Job1",
+                JobAttempt = 1
+            };
+        }
+
         [Fact]
         [Trait("Level", "L0")]
         [Trait("Category", "Plugin")]
@@ -25,11 +41,6 @@ namespace Test.L0.Plugin.TestResultParser
             var logger = new Mock<ITraceLogger>();
             var telemetry = new Mock<ITelemetryDataCollector>();
             var testClient = new Mock<TestResultsHttpClient>(new Uri("http://dummyurl"), new VssCredentials());
-            var pipelineConfig = new PipelineConfig()
-            {
-                BuildId = 1,
-                Project = new Guid()
-            };
 
             clientFactory.Setup(x => x.GetClient<TestResultsHttpClient>()).Returns(testClient.Object);
             testClient.Setup(x =>
@@ -42,7 +53,7 @@ namespace Test.L0.Plugin.TestResultParser
                     x.UpdateTestRunAsync(It.IsAny<RunUpdateModel>(), It.IsAny<Guid>(), It.IsAny<int>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new Microsoft.TeamFoundation.TestManagement.WebApi.TestRun()));
 
-            var publisher = new PipelineTestRunPublisher(clientFactory.Object, pipelineConfig, logger.Object, telemetry.Object);
+            var publisher = new PipelineTestRunPublisher(clientFactory.Object, this._pipelineConfig, logger.Object, telemetry.Object);
             await publisher.PublishAsync(new TestRun("FakeTestResultParser/1", "Fake", 1)
             {
                 PassedTests = new List<TestResult>()
@@ -56,7 +67,7 @@ namespace Test.L0.Plugin.TestResultParser
             });
 
             testClient.Verify(x =>
-                x.CreateTestRunAsync(It.Is<RunCreateModel>(run => run.Name.Equals("Fake test run 1 - automatically inferred results", StringComparison.OrdinalIgnoreCase)),
+                x.CreateTestRunAsync(It.Is<RunCreateModel>(run => run.Name.Equals("Fake test run 1 - automatically inferred results", StringComparison.OrdinalIgnoreCase) && ValidatePipelineReference(run)),
                 It.IsAny<Guid>(), null, It.IsAny<CancellationToken>()));
             testClient.Verify(x => x.AddTestResultsToTestRunAsync(It.Is<TestCaseResult[]>(res => res.Length == 1),
                 It.IsAny<Guid>(), It.IsAny<int>(), null, It.IsAny<CancellationToken>()));
@@ -73,11 +84,6 @@ namespace Test.L0.Plugin.TestResultParser
             var logger = new Mock<ITraceLogger>();
             var telemetry = new Mock<ITelemetryDataCollector>();
             var testClient = new Mock<TestResultsHttpClient>(new Uri("http://dummyurl"), new VssCredentials());
-            var pipelineConfig = new PipelineConfig()
-            {
-                BuildId = 1,
-                Project = new Guid()
-            };
 
             clientFactory.Setup(x => x.GetClient<TestResultsHttpClient>()).Returns(testClient.Object);
             testClient.Setup(x =>
@@ -90,7 +96,7 @@ namespace Test.L0.Plugin.TestResultParser
                     x.UpdateTestRunAsync(It.IsAny<RunUpdateModel>(), It.IsAny<Guid>(), It.IsAny<int>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new Microsoft.TeamFoundation.TestManagement.WebApi.TestRun()));
 
-            var publisher = new PipelineTestRunPublisher(clientFactory.Object, pipelineConfig, logger.Object, telemetry.Object) { BatchSize = 3 };
+            var publisher = new PipelineTestRunPublisher(clientFactory.Object, this._pipelineConfig, logger.Object, telemetry.Object) { BatchSize = 3 };
             await publisher.PublishAsync(new TestRun("FakeTestResultParser/1", "Fake", 1)
             {
                 PassedTests = new List<TestResult>()
@@ -140,11 +146,6 @@ namespace Test.L0.Plugin.TestResultParser
             var logger = new Mock<ITraceLogger>();
             var telemetry = new Mock<ITelemetryDataCollector>();
             var testClient = new Mock<TestResultsHttpClient>(new Uri("http://dummyurl"), new VssCredentials());
-            var pipelineConfig = new PipelineConfig()
-            {
-                BuildId = 1,
-                Project = new Guid()
-            };
 
             clientFactory.Setup(x => x.GetClient<TestResultsHttpClient>()).Returns(testClient.Object);
             testClient.Setup(x =>
@@ -163,7 +164,7 @@ namespace Test.L0.Plugin.TestResultParser
                     Id = 1
                 }));
 
-            var publisher = new PipelineTestRunPublisher(clientFactory.Object, pipelineConfig, logger.Object, telemetry.Object);
+            var publisher = new PipelineTestRunPublisher(clientFactory.Object, this._pipelineConfig, logger.Object, telemetry.Object);
             await publisher.PublishAsync(new TestRun("FakeTestResultParser/1", "Fake", 1)
             {
                 PassedTests = new List<TestResult>()
@@ -215,11 +216,6 @@ namespace Test.L0.Plugin.TestResultParser
             var logger = new Mock<ITraceLogger>();
             var telemetry = new Mock<ITelemetryDataCollector>();
             var testClient = new Mock<TestResultsHttpClient>(new Uri("http://dummyurl"), new VssCredentials());
-            var pipelineConfig = new PipelineConfig()
-            {
-                BuildId = 1,
-                Project = new Guid()
-            };
 
             clientFactory.Setup(x => x.GetClient<TestResultsHttpClient>()).Returns(testClient.Object);
             testClient.Setup(x =>
@@ -238,7 +234,7 @@ namespace Test.L0.Plugin.TestResultParser
                     Id = 1
                 }));
 
-            var publisher = new PipelineTestRunPublisher(clientFactory.Object, pipelineConfig, logger.Object, telemetry.Object);
+            var publisher = new PipelineTestRunPublisher(clientFactory.Object, this._pipelineConfig, logger.Object, telemetry.Object);
             await publisher.PublishAsync(new TestRun("FakeTestResultParser/1", "Fake", 1));
 
             testClient.Verify(x =>
@@ -271,6 +267,15 @@ namespace Test.L0.Plugin.TestResultParser
             }
 
             return false;
+        }
+
+        private bool ValidatePipelineReference(RunCreateModel run)
+        {
+            bool pipelineId = run.PipelineReference.PipelineId.Equals(1);
+            bool stageReference = run.PipelineReference.StageReference.Attempt.Equals(1) && run.PipelineReference.StageReference.StageName.Equals("Stage1");
+            bool phaseReference = run.PipelineReference.PhaseReference.Attempt.Equals(1) && run.PipelineReference.PhaseReference.PhaseName.Equals("Phase1");
+            bool jobReference = run.PipelineReference.JobReference.Attempt.Equals(1) && run.PipelineReference.JobReference.JobName.Equals("Job1");
+            return pipelineId && stageReference && phaseReference && jobReference;
         }
     }
 }

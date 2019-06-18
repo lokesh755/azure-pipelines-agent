@@ -1,13 +1,15 @@
 ## Features
-  - Pipeline caching plugins #2184
-
+  - Calculate artifact size for build (file container) artifacts #2258
+  - Add jobId as source for artifacts #2278
+  - Capture telemetry from PA/PC tasks #2274
+  - Create publish pipeline artifact v1 task in agent #2279
+  - Update download path so that it's relative to workingDirectory for DPA V2 task #2282
+  
 ## Bugs
-  - Fix Result publisher warning for empty results file. #2222
-  - Implement shallow fetch by commit #2211
-  - Use LogCallback instead of IAdalLogCallback. #2219
-
+  - N/A
+  
 ## Misc
-  - Changing vss-api-netcore version to 0.5.103-private #2215
+  - N/A
 
 ## Agent Downloads  
 

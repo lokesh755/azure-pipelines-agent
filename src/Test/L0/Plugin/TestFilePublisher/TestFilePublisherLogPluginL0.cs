@@ -10,6 +10,7 @@ using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using Moq;
 using Xunit;
+using Test.L0.Util;
 
 namespace Test.L0.Plugin.TestFilePublisher
 {
@@ -313,6 +314,7 @@ namespace Test.L0.Plugin.TestFilePublisher
             var telemetry = new Mock<ITelemetryDataCollector>();
 
             telemetry.Setup(x => x.PublishCumulativeTelemetryAsync()).Returns(Task.FromResult(TaskResult.Succeeded));
+            telemetry.Setup(x => x.PublishTelemetryAsync(It.IsAny<string>(), It.IsAny<Dictionary<string, Object>>())).Callback<string, Dictionary<string, Object>>((feature, props) => TelemetryPropsUtil.AssertPipelineData(props)).Returns(Task.FromResult(TaskResult.Succeeded));
 
             agentContext.Setup(x => x.Steps).Returns(new List<TaskStepDefinitionReference>()
             {
@@ -322,8 +324,7 @@ namespace Test.L0.Plugin.TestFilePublisher
                 }
             });
 
-            agentContext.Setup(x => x.VssConnection).Returns(vssConnection.Object);
-            agentContext.Setup(x => x.Variables).Returns(new Dictionary<string, VariableValue>()
+            Dictionary<string, VariableValue> agentContextVariables = new Dictionary<string, VariableValue>()
             {
                 { "system.hosttype", new VariableValue("build") },
                 { "system.servertype", new VariableValue("Hosted") },
@@ -332,7 +333,10 @@ namespace Test.L0.Plugin.TestFilePublisher
                 { "agent.tempdirectory", new VariableValue("/tmp")},
                 { "agent.testfilepublisher.pattern", new VariableValue("test-*.xml")},
                 { "agent.testfilepublisher.searchfolders", new VariableValue("agent.tempdirectory")}
-            });
+            };
+            TelemetryPropsUtil.AddPipelineDataIntoAgentContext(agentContextVariables);
+            agentContext.Setup(x => x.VssConnection).Returns(vssConnection.Object);
+            agentContext.Setup(x => x.Variables).Returns(agentContextVariables);
             testFilePublisher.Setup(x => x.InitializeAsync()).Returns(Task.CompletedTask);
 
             var plugin = new TestFilePublisherLogPlugin(logger.Object, telemetry.Object, testFilePublisher.Object);

@@ -8,5 +8,17 @@ namespace Agent.Plugins.Log.TestResultParser.Plugin
         public Guid Project { get; set; }
 
         public int BuildId { get; set; }
+
+        public String StageName { get; set; }
+
+        public int StageAttempt { get; set; }
+
+        public String PhaseName { get; set; }
+
+        public int PhaseAttempt { get; set; }
+
+        public String JobName { get; set; }
+
+        public int JobAttempt { get; set; }
     }
 }
